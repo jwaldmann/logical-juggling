@@ -17,6 +17,10 @@ newtype Person = Person Int
   deriving (Eq, Ord, Show, Enum, A.Ix, Num, Real, Integral)
 type Place = (Person,Time)
 
+throws p pred = do
+  (throw,t) <- assocs p
+  return $ t && encode (pred throw)
+
 each_throw :: Plan Bit -> (Throw -> Bool) -> Bit
 each_throw p pred = and $ do
   (throw,t) <- assocs p
@@ -37,13 +41,13 @@ main = do
   (Satisfied, Just (p :: Plan Bool)) <- solveWith minisat $ do
     p :: Plan Bit <- plan (Person 4) (Time 3)
     assert $ heights p [3,4]
-    assert $ each_person p $ \ e -> some_throw p $ \ t ->
-           from t == e
-      P.&& to t == e
-      P.&& eq_mod (period p) 3 (height t)
-    assert $ passes p [(0,2),(0,3),(1,2),(1,3)
-                      ,(2,0),(2,1),(3,0),(3,1)
-                      ]
+    assert $ each_person p $ \ e -> exactly_one $ throws p $ \ t ->
+         from t == e P.&& ispass t
+    assert $ each_throw p $ \ t ->
+      ispass t || eq_mod (period p) 3 (height t)
+    assert $ each_throw p $ \ t -> isself t ||
+      let small e = e + e < persons p
+      in  small (from t) /= small (to t)
     return p
   putStrLn $ pplan p
 
@@ -70,7 +74,8 @@ to (_,(p1,t1)) = p1
 start ((p0,t0),_) = t0
 land (_,(p1,t1)) = t1
 
-isself throw = let (h0,h1) = direction throw in h0 == h1
+isself throw = from throw == to throw
+ispass = not . isself
 
 passes p ds = allowed_passes p ds && required_passes p ds
 
@@ -125,8 +130,9 @@ bounds (Plan p) =
 
 assocs (Plan p) = A.assocs p
 
-period p = let ((_,t0),(_,t1)) = bounds p in t1 - t0
-  
+period p = let ((_,t0),(_,t1)) = bounds p in t1 + 1 - t0
+persons p = let ((h0,_),(h1,_)) = bounds p in h1 + 1 - h0
+                                             
 instance Codec p => Codec (Plan p) where
   type Decoded (Plan p) = Plan (Decoded p)
   decode s (Plan p) = Plan <$> decode s p
