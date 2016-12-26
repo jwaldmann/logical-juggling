@@ -5,12 +5,14 @@
 module Semantics where
 
 import Syntax as S
+import Parse ()
 import Data
 import Param
 
 import Prelude hiding (and, or, not, (||), (&&))
 import qualified Prelude as P
-import Ersatz (Boolean(..),Result(..))
+import Ersatz (Boolean(..),Result(..), Orderable(..),  encode)
+import qualified Ersatz as E
 import Ersatz.Solver
 import BB
 
@@ -26,8 +28,8 @@ semantics f p = do
   (status,out) <- solveWith minisat $ do
     plan <- Data.make p
     case models f plan of
-      Left err -> error $ show err
-      Right bit -> do
+      P.Left err -> error $ show err
+      P.Right bit -> do
         assert bit
         return plan
   case status of
@@ -65,6 +67,14 @@ formula p env f = case f of
        (Eq, [ VTime x, VTime y ]) -> return $ equals x y
        (Eq, [ VPerson x, VPerson y ]) -> return $ equals x y
        (Eq, [ VPlace x, VPlace y ]) -> return $ equals x y
+       (Neq, [ VTime x, VTime y ]) -> return $ not $ equals x y
+       (Neq, [ VPerson x, VPerson y ]) -> return $ not $ equals x y
+       (Neq, [ VPlace x, VPlace y ]) -> return $ not $ equals x y
+       (Pass, [ VThrow x ]) ->
+         return $ not $ equals (apply1 from x) (apply1 to x)
+       (Self, [ VThrow x ]) ->
+         return $ equals (apply1 from x) (apply1 to x)
+       (S.Right, [VTime x]) -> return $ rel1 even x
   Quantified q Throw name f -> do
     pairs <- forM (assocs p) $ \ (k,v) -> 
       (v,) <$> formula p (M.insert name (VThrow $ Encoded $ M.singleton k v) env) f
@@ -76,6 +86,10 @@ formula p env f = case f of
       formula p (M.insert name v env) f
     return $ case q of
       Exists -> or vs
+      Forall -> and vs
+      Atleast k -> atleast k vs
+      Atmost k -> atmost k vs
+      Exactly k -> exactly k vs
   Boolean bop fs -> do
     vs <- forM fs $ formula p env
     case (bop,vs) of
@@ -99,6 +113,9 @@ term p env t = case t of
     case (op,vs) of
       (Begin,[VThrow x]) -> return $ VTime $ apply1 begin x
       (End,[VThrow x]) -> return $ VTime $ apply1 end x
+      (From,[VThrow x]) -> return $ VPerson $ apply1 from x
+      (To,[VThrow x]) -> return $ VPerson $ apply1 to x
+      (Height,[VThrow x]) -> return $ VTime $ apply1 ( \ t -> mod (end t - begin t) (Data.period p) ) x
       (Next, [VTime x]) -> return $ VTime $ apply1 (next_time p) x
       (Next, [VPerson x]) -> return $ VPerson $ apply1 (next_person p) x
       (Prev, [VTime x]) -> return $ VTime $ apply1 (prev_time p) x
@@ -117,6 +134,12 @@ prev_person p x = mod (pred x) (Data.persons p)
 plus_time p x y = mod (x + y) (Data.period p)
 minus_time p x y = mod (x - y) (Data.period p)
 
+rel1 :: (a -> Bool) -> Encoded a -> BB
+rel1 r (Encoded x) = or $ do
+  (k,v) <- M.toList x
+  guard $ r k
+  return v
+
 apply1 :: Ord b => (a -> b) -> Encoded a -> Encoded b
 apply1 f (Encoded x) = Encoded $ M.fromListWith (||) $ do
   (k,v) <- M.toList x
@@ -127,3 +150,8 @@ apply2 f (Encoded x) (Encoded y) = Encoded $ M.fromListWith (||) $ do
   (kx,vx) <- M.toList x
   (ky,vy) <- M.toList y
   return (f kx ky, vx && vy)
+
+atleast, atmost, exactly :: Int -> [BB] -> BB
+atleast k xs = Unknown $ encode (fromIntegral k) <=? sumBit xs
+atmost k xs = Unknown $ encode (fromIntegral k) >=? sumBit xs
+exactly k xs = Unknown $ encode (fromIntegral k) E.=== sumBit xs

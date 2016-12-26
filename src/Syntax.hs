@@ -2,6 +2,7 @@
 
 module Syntax where
 
+import Prelude hiding (Either(..))
 import Data.Text
 import Data.String
 
@@ -26,6 +27,7 @@ data Sort = Throw | Place | Person | Time | Hand
   deriving (Eq, Ord, Show)
 
 data Rel = Eq | Neq | Lt | Gt | Leq | Geq
+         | Pass | Self | Right | Left
   deriving (Eq, Ord, Show)
 
 data Quant
@@ -47,6 +49,8 @@ data Term = Ref Name
           | Apply Fun [Term]
   deriving (Eq, Ord, Show)
 
-data Fun = Next | Prev | Plus | Minus | Begin | End | From | To
+data Fun = Next | Prev | Plus | Minus
+         | Begin | End | Height
+         | From | To
   deriving (Eq, Ord, Show)
 

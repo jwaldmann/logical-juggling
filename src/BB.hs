@@ -41,6 +41,12 @@ instance Boolean BB where
   
 x === y = xor x (not y)
 
+sumBit :: [BB] -> E.Bits
+sumBit xs = E.sumBit $ map unpack xs
+
+unpack (Known k) = bool k
+unpack (Unknown u) = u
+
 exists = Unknown <$> E.exists
 assert (Known c) = E.assert $ bool c
 assert (Unknown c) = E.assert c

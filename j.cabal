@@ -16,7 +16,8 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Syntax,Semantics
-  build-depends:       base >= 4.7 && < 5, ersatz, mtl, containers
+  build-depends:       base >= 4.7 && < 5, ersatz
+                     , mtl, containers, parsec
   default-language:    Haskell2010
 
 executable j-exe
