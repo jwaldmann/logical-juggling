@@ -1,0 +1,9 @@
+persons 4
+period 3
+
+forall throw t : height t == time 3 || height t == time 4
+
+forall person p : exactly 1 throw t : p == from t && self t && height t == time 3
+
+atmost 5 throw t : height t == time 4
+

@@ -1,27 +1,57 @@
 {-# language NoMonomorphismRestriction #-}
 {-# language FlexibleContexts #-}
+{-# language OverloadedStrings #-}
 
 module Parse where
 
 import Prelude hiding (Either (..))
 import qualified Prelude as P
 import Syntax
-import Text.Parsec.String
-import Text.Parsec.Char
 import Text.Parsec
+import Text.Parsec.Text
+import Text.Parsec.Char
 import Text.Parsec.Expr
+import Text.Parsec.Pos
+import Text.Parsec.Error
 import qualified Data.Text as T
+import Control.Monad.Except
+import Data.Monoid
 
-instance Read Formula where readsPrec = run formula
-instance Read Term where readsPrec = run term
+
+
+instance Read Formula where
+  readsPrec prec s = force $ run formula prec $ T.pack s
+instance Read Term where
+  readsPrec prec s = force $ run term prec $ T.pack s
+
+force e = case e of
+  P.Right (x,s) -> [(x,s)]
+  P.Left err -> error $ T.unpack err
 
 test0 :: Formula
 test0 = read "forall throw t : time 3 == end t - begin t"
 
+run :: Parser a -> Int -> T.Text -> P.Either T.Text (a, String)
 run p prec s =   
-    case runParser ( (,) <$> p <*> getInput ) () "-" s of
-      P.Right (x,t) -> [(x,t)]
-      P.Left err -> error $ show err
+    case runParser ( (,) <$> (whitespace *> p) <*> getInput ) () "-" s of
+      P.Right (x,t) -> return (x,T.unpack t)
+      P.Left err ->
+        let pos = errorPos err
+            (pre, this: post) = splitAt (sourceLine pos - 1)
+               $  T.lines s
+            under = T.replicate (sourceColumn pos - 1) "~" <> "^"
+        in  throwError $ T.unlines $
+         [  this, under , T.pack $ show err ]
+
+data Source =
+  Source { persons :: Int, period :: Int , constraints :: [Formula] }
+  deriving Show
+
+source = Source
+ <$> ( keyword "persons" *> number )
+ <*> ( keyword "period" *> number )
+ <*> many formula
+ <* eof
 
 formula = quantified <|> boolean
 
@@ -84,15 +114,19 @@ function = fromList
   ]
 
 name = (Name . T.pack)
-   <$> ( (:) <$> letter <*> many alphaNum <* spaces)
+   <$> ( (:) <$> letter <*> many alphaNum <* whitespace)
 
 number =
   ( foldl (\x y -> x*10 + fromEnum y - fromEnum '0') 0 )
-  <$> many1 digit <* spaces
+  <$> many1 digit <* whitespace
 
 parens p = keyword "(" *> p <* keyword ")"
 
-keyword s = try (string s) <* spaces
+keyword s = try (string s) <* whitespace
 
 prefix s f = Prefix ( keyword  s *> return f )
 binary s f a = Infix ( keyword s *> return f ) a
+
+whitespace = many $ void space
+  <|> void ( try (string "//") >> manyTill anyChar endOfLine )
+  <|> void ( try (string "/*") >> manyTill anyChar (try $ string "*/") )

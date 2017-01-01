@@ -75,12 +75,17 @@ formula p env f = case f of
        (Self, [ VThrow x ]) ->
          return $ equals (apply1 from x) (apply1 to x)
        (S.Right, [VTime x]) -> return $ rel1 even x
+       (S.Left, [VTime x]) -> return $ rel1 odd x
   Quantified q Throw name f -> do
     pairs <- forM (assocs p) $ \ (k,v) -> 
       (v,) <$> formula p (M.insert name (VThrow $ Encoded $ M.singleton k v) env) f
+    let combi =   map (uncurry (&&)) pairs
     return $ case q of
       Forall -> and $ map (uncurry (==>)) pairs
-      Exists -> or  $ map (uncurry (&&)) pairs
+      Exists -> or combi
+      Atmost k -> atmost k combi
+      Exactly k -> exactly k combi
+      Atleast k -> atleast k combi
   Quantified q sort name f -> do
     vs <- forM (elements p sort) $ \ v ->
       formula p (M.insert name v env) f

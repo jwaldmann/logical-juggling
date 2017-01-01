@@ -1,0 +1,19 @@
+// Die Krönung
+
+persons 4
+period 4
+
+forall throw t :  pass t ==> height t == time 3 || height t == time 4
+
+forall throw t :  self t ==> height t == time 3
+
+exactly 4 throw t : height t == time 4
+
+forall person p : forall throw t1 : forall throw t2 : from t1 == p ==> from t2 == p ==> begin t2 == next (begin t1) ==> self t1 || self t2
+
+forall person p : exactly 2 person q : exists throw t : pass t && from t == p && to t == q
+
+! (exists throw t : from t == person 0 && to t == person 1)
+! (exists throw t : from t == person 1 && to t == person 0)
+! (exists throw t : from t == person 2 && to t == person 3)
+! (exists throw t : from t == person 3 && to t == person 2)

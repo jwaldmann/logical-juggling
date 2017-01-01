@@ -1,8 +1,8 @@
-name:                j
+name:                logical-juggling
 version:             0.1.0.0
-synopsis:            Initial project template from stack
+synopsis:            
 description:         Please see README.md
-homepage:            https://github.com/githubuser/j#readme
+homepage:            https://github.com/githubuser/logical-juggling
 license:             BSD3
 license-file:        LICENSE
 author:              Author name here
@@ -15,16 +15,23 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Syntax,Semantics
+  exposed-modules:     Syntax,Semantics,Param,Parse,BB,Data
   build-depends:       base >= 4.7 && < 5, ersatz
-                     , mtl, containers, parsec
+                     , mtl, containers, array, parsec, text
   default-language:    Haskell2010
 
-executable j-exe
+executable logical-juggling-server
   hs-source-dirs:      app
-  main-is:             Main.hs
+  main-is:             Server.hs
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
-  build-depends:       base , j, array, text
+  build-depends:       base , logical-juggling, yesod
+  default-language:    Haskell2010
+
+executable logical-juggling-console
+  hs-source-dirs:      app
+  main-is:             Console.hs
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  build-depends:       base , logical-juggling, text
   default-language:    Haskell2010
 
 test-suite j-test
@@ -32,10 +39,10 @@ test-suite j-test
   hs-source-dirs:      test
   main-is:             Spec.hs
   build-depends:       base
-                     , j
+                     , logical-juggling
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   default-language:    Haskell2010
 
 source-repository head
   type:     git
-  location: https://github.com/githubuser/j
+  location: https://github.com/jwaldmann/logical-juggling
