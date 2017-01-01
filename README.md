@@ -35,7 +35,7 @@ D : 3->C , 3    , 3->B ,
 Model
 -----
 
-* a Place is a pair of Person and Time (all places are points inside a rectangle)
+* a Place is a pair of Person and Time (all places are points inside a rectangle, one axis is time, other axis is person)
 * a Pattern is a bijection between Places and Places (expressed by arrows in this rectangle.
   Bijection means that each place has exactly one incoming arrow (a catch), and exactly one outgoing arrow (a throw)).
 
@@ -49,7 +49,7 @@ Restrictions
 Why
 ---
 
-* it's an alternative to pattern generators controlled by drop-down menus
+* it's an alternative to pattern generators with fixed-form queries like <http://prechacthis.org/>
 * it's an application of things I research and teach (semantics of programming languages,
 compiler construction, constraint programming, SAT encoding)
 
