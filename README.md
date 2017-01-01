@@ -19,6 +19,11 @@ forall person p : exactly 1 throw t : p == from t && self t && height t == time 
 atmost 5 throw t : height t == time 4
 ```
 
+Building the console version:
+```
+stack install
+```
+
 Running the console version:
 ```
 logical-juggling-console examples/simple.lj
@@ -62,13 +67,13 @@ Why
 * it's an application of things I research and teach (semantics of programming languages,
 compiler construction, constraint programming, SAT encoding)
 
+Discussion
+----------
+
 Of course (first-order) predicate logic is the most clear, most natural, etc., specification language.
 The challenge is to make it "more practical" (for this application),
 which presumably means to move it more towards natural language,
 without destryoing its nice semantical and syntactical properties.
-
-Discussion
-----------
 
 For instance, people might want to say, "each person throws (at least) one pass".
 This is (conceptually) shorter than the exact formal specification
