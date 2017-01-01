@@ -73,7 +73,7 @@ Discussion
 For instance, people might want to say, "each person throws (at least) one pass".
 This is (conceptually) shorter than the exact formal specification
 ```
-for each person p : exists throw t : p == from t
+for each person p : exists throw t : p == from t && pass t
 ```
 because of
 * names (`p`, `t`) are implicit
