@@ -3,7 +3,7 @@ version:             0.1.0.0
 synopsis:            
 description:         Please see README.md
 homepage:            https://github.com/githubuser/logical-juggling
-license:             BSD3
+license:             GPL3
 license-file:        LICENSE
 author:              Author name here
 maintainer:          example@example.com
@@ -15,7 +15,7 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Syntax,Semantics,Param,Parse,BB,Data
+  exposed-modules:     Syntax,Semantics,Param,Parse,Data
   build-depends:       base >= 4.7 && < 5, ersatz
                      , mtl, containers, array, parsec, text
   default-language:    Haskell2010

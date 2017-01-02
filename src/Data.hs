@@ -5,9 +5,8 @@
 module Data where
 
 import Param
-import BB
 import Prelude hiding ((||),(&&),and,or,not)
-import Ersatz (Boolean(..), Codec(..))
+import Ersatz (Boolean(..), Codec(..), assert, exists)
 
 import Control.Monad (forM, forM_, guard)
 import qualified Data.Array as A

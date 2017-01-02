@@ -11,10 +11,11 @@ import Param
 
 import Prelude hiding (and, or, not, (||), (&&))
 import qualified Prelude as P
-import Ersatz (Boolean(..),Result(..), Orderable(..),  encode)
+import Ersatz (Bit,Boolean(..),Result(..)
+              , Orderable(..), Equatable(..)
+              , assert, encode, sumBits)
 import qualified Ersatz as E
 import Ersatz.Solver
-import BB
 
 import qualified Data.Text as T
 import qualified Data.Map.Strict as M
@@ -25,21 +26,22 @@ solve f p = semantics f p >>= \ case
 
 semantics :: Formula -> Param -> IO (Maybe String)
 semantics f p = do
-  (status,out) <- solveWith minisat $ do
+  (stats,(status,out)) <- solveWithStats minisat $ do
     plan <- Data.make p
     case models f plan of
       P.Left err -> error $ show err
       P.Right bit -> do
         assert bit
         return plan
+  print stats      
   case status of
     Satisfied -> return $ pplan <$> out
     _ -> error $ show status
 
-models :: Formula -> Plan BB -> Either T.Text BB
+models :: Formula -> Plan Bit -> Either T.Text Bit
 models f p = formula p M.empty f
 
-newtype Encoded a = Encoded (M.Map a BB)
+newtype Encoded a = Encoded (M.Map a Bit)
   deriving Show
 
 equals (Encoded x) (Encoded y) =
@@ -59,7 +61,7 @@ elements p s = case s of
 
 known e = Encoded $ M.singleton e true  
 
-formula :: Plan BB -> M.Map Name Value -> Formula -> Either T.Text BB
+formula :: Plan Bit -> M.Map Name Value -> Formula -> Either T.Text Bit
 formula p env f = case f of
   Atom rel ts -> do
     vs <- forM ts $ term p env
@@ -106,7 +108,7 @@ formula p env f = case f of
       _ -> throwError $ T.unwords
         [ "Semantics.models:", T.pack $ show f ]
 
-term :: Plan BB -> M.Map Name Value -> Term -> Either T.Text Value
+term :: Plan Bit -> M.Map Name Value -> Term -> Either T.Text Value
 term p env t = case t of
   Constant S.Person i -> return $ VPerson $ known
      $ mod (fromIntegral i) (Data.persons p)
@@ -139,7 +141,7 @@ prev_person p x = mod (pred x) (Data.persons p)
 plus_time p x y = mod (x + y) (Data.period p)
 minus_time p x y = mod (x - y) (Data.period p)
 
-rel1 :: (a -> Bool) -> Encoded a -> BB
+rel1 :: (a -> Bool) -> Encoded a -> Bit
 rel1 r (Encoded x) = or $ do
   (k,v) <- M.toList x
   guard $ r k
@@ -156,7 +158,7 @@ apply2 f (Encoded x) (Encoded y) = Encoded $ M.fromListWith (||) $ do
   (ky,vy) <- M.toList y
   return (f kx ky, vx && vy)
 
-atleast, atmost, exactly :: Int -> [BB] -> BB
-atleast k xs = Unknown $ encode (fromIntegral k) <=? sumBit xs
-atmost k xs = Unknown $ encode (fromIntegral k) >=? sumBit xs
-exactly k xs = Unknown $ encode (fromIntegral k) E.=== sumBit xs
+atleast, atmost, exactly :: Int -> [Bit] -> Bit
+atleast k xs = encode (fromIntegral k) <=? sumBits xs
+atmost k xs = encode (fromIntegral k) >=? sumBits xs
+exactly k xs = encode (fromIntegral k) E.=== sumBits xs
