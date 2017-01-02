@@ -1,0 +1,32 @@
+persons 4
+period 3
+
+forall throw t : height t == time 3 || height t == time 4
+
+forall person p : exactly 1 throw t :
+  p == from t && self t && height t == time 3
+
+forall person p : exactly 2 person q : exists throw t :
+  pass t && from  t == p && to t == q
+
+forall throw t : pass t ==>
+  (   ! (from t == person 0 && to t == person 1 )
+  &&  ! (from t == person 1 && to t == person 0 )
+  &&  ! (from t == person 2 && to t == person 3 )
+  &&  ! (from t == person 3 && to t == person 2 )
+  )
+
+atleast 1  throw t : height t == time 4
+
+forall person p : atmost 1 throw t :
+  pass t && from t == p && ! (height t == time 3)
+
+/*
+
+A : 3    , 3->C , 4->D , 
+B : 4->D , 3    , 3->C , 
+C : 3    , 4->A , 3->B , 
+D : 3->B , 3->A , 3    , 
+
+
+*/
