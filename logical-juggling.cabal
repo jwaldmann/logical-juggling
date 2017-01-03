@@ -17,7 +17,7 @@ library
   hs-source-dirs:      src
   exposed-modules:     Syntax,Semantics,Param,Parse,Data
   build-depends:       base >= 4.7 && < 5, ersatz
-                     , mtl, containers, array, parsec, text, hashable
+                     , mtl, containers, array, parsec, text, hashable, unordered-containers
   default-language:    Haskell2010
 
 executable logical-juggling-server

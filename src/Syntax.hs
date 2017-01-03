@@ -42,6 +42,10 @@ data Name = Name { hc :: ! Int, contents :: ! Text }
 name :: Text -> Name
 name s = Name { hc = hash s, contents = s }
 
+instance Hashable Name where 
+  hashWithSalt = undefined
+  hash = hc
+
 instance IsString Name where
   fromString = name . fromString  
 

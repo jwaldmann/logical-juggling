@@ -1,6 +1,7 @@
 {-# language OverloadedStrings #-}
 {-# language LambdaCase #-}
 {-# language TupleSections #-}
+{-# language ConstraintKinds #-}
 
 module Semantics where
 
@@ -18,8 +19,15 @@ import qualified Ersatz as E
 import Ersatz.Solver
 
 import qualified Data.Text as T
-import qualified Data.Map.Strict as M
+-- import qualified Data.Map.Strict as M
+import qualified Data.HashMap.Strict as M
+import Data.HashMap.Strict (HashMap)
+import Data.Hashable
 import Control.Monad.Except
+
+type Map k v = HashMap k v
+
+type Mappable k = (Eq k, Hashable k)
 
 solve f p = semantics f p >>= \ case
   Just s -> putStrLn s
@@ -41,7 +49,7 @@ semantics f p = do
 models :: Formula -> Plan Bit -> Either T.Text Bit
 models f p = formula p M.empty f
 
-newtype Encoded a = Encoded (M.Map a Bit)
+newtype Encoded a = Encoded (Map a Bit)
   deriving Show
 
 equals (Encoded x) (Encoded y) =
@@ -61,7 +69,7 @@ elements p s = case s of
 
 known e = Encoded $ M.singleton e true  
 
-formula :: Plan Bit -> M.Map Name Value -> Formula -> Either T.Text Bit
+formula :: Plan Bit -> Map Name Value -> Formula -> Either T.Text Bit
 formula p env f = case f of
   Atom rel ts -> do
     vs <- forM ts $ term p env
@@ -108,7 +116,8 @@ formula p env f = case f of
       _ -> throwError $ T.unwords
         [ "Semantics.models:", T.pack $ show f ]
 
-term :: Plan Bit -> M.Map Name Value -> Term -> Either T.Text Value
+term :: Plan Bit -> Map
+ Name Value -> Term -> Either T.Text Value
 term p env t = case t of
   Constant S.Person i -> return $ VPerson $ known
      $ mod (fromIntegral i) (Data.persons p)
@@ -147,12 +156,12 @@ rel1 r (Encoded x) = or $ do
   guard $ r k
   return v
 
-apply1 :: Ord b => (a -> b) -> Encoded a -> Encoded b
+apply1 :: Mappable b => (a -> b) -> Encoded a -> Encoded b
 apply1 f (Encoded x) = Encoded $ M.fromListWith (||) $ do
   (k,v) <- M.toList x
   return (f k, v)
 
-apply2 :: Ord c => (a -> b -> c) -> Encoded a -> Encoded b -> Encoded c
+apply2 :: Mappable c => (a -> b -> c) -> Encoded a -> Encoded b -> Encoded c
 apply2 f (Encoded x) (Encoded y) = Encoded $ M.fromListWith (||) $ do
   (kx,vx) <- M.toList x
   (ky,vy) <- M.toList y

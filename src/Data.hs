@@ -10,11 +10,12 @@ import Ersatz (Boolean(..), Codec(..), assert, exists)
 
 import Control.Monad (forM, forM_, guard)
 import qualified Data.Array as A
+import Data.Hashable
 
 newtype Time = Time Int
-  deriving (Eq, Ord, Show, Enum, A.Ix, Num, Real, Integral)
+  deriving (Eq, Ord, Show, Enum, A.Ix, Num, Real, Integral, Hashable)
 newtype Person = Person Int
-  deriving (Eq, Ord, Show, Enum, A.Ix, Num, Real, Integral)
+  deriving (Eq, Ord, Show, Enum, A.Ix, Num, Real, Integral, Hashable)
 type Place = (Person,Time)
 
 type Throw = (Place,Place)
