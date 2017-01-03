@@ -58,7 +58,7 @@ formula = quantified <|> boolean
 quantified = Quantified
   <$> quant 
   <*> sort
-  <*> ( name <* keyword ":" )
+  <*> ( Parse.name <* keyword ":" )
   <*> formula
 
 quant =
@@ -103,7 +103,7 @@ application =  ( Constant <$> sort <*> number )
   <|> aterm
 
 aterm = parens term 
-  <|> ( Ref <$> name )
+  <|> ( Ref <$> Parse.name )
 
 fromList = foldr1 (<|>) . map (\(s,v) -> keyword s *> return v)
 
@@ -113,7 +113,7 @@ function = fromList
   , ("from", From), ("to", To)
   ]
 
-name = (Name . T.pack)
+name = (Syntax.name . T.pack)
    <$> ( (:) <$> letter <*> many alphaNum <* whitespace)
 
 number =

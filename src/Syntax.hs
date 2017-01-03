@@ -5,6 +5,7 @@ module Syntax where
 import Prelude hiding (Either(..))
 import Data.Text
 import Data.String
+import Data.Hashable
 
 f0 :: Formula
 f0 = Boolean And
@@ -35,11 +36,14 @@ data Quant
   | Atleast Int | Atmost Int | Exactly Int
   deriving (Eq, Ord, Show)
 
-newtype Name = Name Text
+data Name = Name { hc :: ! Int, contents :: ! Text }
   deriving (Eq, Ord, Show)
 
+name :: Text -> Name
+name s = Name { hc = hash s, contents = s }
+
 instance IsString Name where
-  fromString = Name . fromString  
+  fromString = name . fromString  
 
 data Boo = Not | And | Or | Implies | Xor
   deriving (Eq, Ord, Show)
