@@ -71,7 +71,7 @@ known e = Encoded $ M.singleton e true
 
 formula :: Plan Bit -> Map Name Value -> Formula -> Either T.Text Bit
 formula p env f = case f of
-  Atom rel ts -> do
+  Atom rel ts -> {-# SCC "formula.Atom" #-} do
     vs <- forM ts $ term p env
     case (rel,vs) of
        (Eq, [ VTime x, VTime y ]) -> return $ equals x y
@@ -86,7 +86,7 @@ formula p env f = case f of
          return $ equals (apply1 from x) (apply1 to x)
        (S.Right, [VTime x]) -> return $ rel1 even x
        (S.Left, [VTime x]) -> return $ rel1 odd x
-  Quantified q Throw name f -> do
+  Quantified q Throw name f -> {-# SCC "formula.Quantified.Throw" #-} do
     pairs <- forM (assocs p) $ \ (k,v) -> 
       (v,) <$> formula p (M.insert name (VThrow $ Encoded $ M.singleton k v) env) f
     let combi =   map (uncurry (&&)) pairs
@@ -96,7 +96,7 @@ formula p env f = case f of
       Atmost k -> atmost k combi
       Exactly k -> exactly k combi
       Atleast k -> atleast k combi
-  Quantified q sort name f -> do
+  Quantified q sort name f -> {-# SCC "formula.Quantified" #-} do
     vs <- forM (elements p sort) $ \ v ->
       formula p (M.insert name v env) f
     return $ case q of
@@ -105,7 +105,7 @@ formula p env f = case f of
       Atleast k -> atleast k vs
       Atmost k -> atmost k vs
       Exactly k -> exactly k vs
-  Boolean bop fs -> do
+  Boolean bop fs -> {-# SCC "formula.Boolean" #-} do
     vs <- forM fs $ formula p env
     case (bop,vs) of
       (And,_) -> return $ and vs
@@ -116,15 +116,14 @@ formula p env f = case f of
       _ -> throwError $ T.unwords
         [ "Semantics.models:", T.pack $ show f ]
 
-term :: Plan Bit -> Map
- Name Value -> Term -> Either T.Text Value
+term :: Plan Bit -> Map Name Value -> Term -> Either T.Text Value
 term p env t = case t of
-  Constant S.Person i -> return $ VPerson $ known
+  Constant S.Person i -> {-# SCC "term.Person" #-} return $ VPerson $ known
      $ mod (fromIntegral i) (Data.persons p)
-  Constant S.Time   i -> return $ VTime   $ known
+  Constant S.Time   i -> {-# SCC "term.Time" #-} return $ VTime   $ known
      $ mod (fromIntegral i) (Data.period p)
-  Ref n | Just v <- M.lookup n env -> return v
-  Apply op ts -> do
+  Ref n | Just v <- M.lookup n env -> {-# SCC "term.Ref" #-} return v
+  Apply op ts -> {-# SCC "term.Apply" #-}do
     vs <- forM ts $ term p env
     case (op,vs) of
       (Begin,[VThrow x]) -> return $ VTime $ apply1 begin x
